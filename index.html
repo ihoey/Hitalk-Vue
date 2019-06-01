@@ -155,14 +155,14 @@
     <a href="https://github.com/Ihoey" target="_blank">梦魇小栈</a>
   </div>
   <script>
-    var HitalkConfig = () => ({
+    var HitalkConfig = {
       el: '#comment',
       appId: 'Ir6SE0GwBzFxczMqXXVpCF8d-gzGzoHsz',
       appKey: 'SnlgtrRYvxJimSYDRw2GBr6H',
       placeholder: 'ヾﾉ≧∀≦)o来啊，快活啊!',
       avatar: 'wavatar',
       path: '/'
-    });
+    };
 
     window.onload = function() {
       var iframes = document.querySelectorAll('iframe');
@@ -174,7 +174,7 @@
   </script>
   <script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/vue"></script>
-  <script src="./dist/main.min.js"></script>
+  <script src="./dist/hitalk.min.js"></script>
 </body>
 
 </html>

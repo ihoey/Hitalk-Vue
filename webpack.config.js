@@ -1,7 +1,7 @@
 const webpack = require('webpack')
 const path = require('path')
 const UglifyJsPlugin = require('uglifyjs-webpack-plugin')
-const CleanWebpackPlugin = require('clean-webpack-plugin')
+// const CleanWebpackPlugin = require('clean-webpack-plugin')
 const { VueLoaderPlugin } = require('vue-loader')
 
 const ROOT_PATH = path.resolve(__dirname)
@@ -13,6 +13,7 @@ const plugins = [
 
 module.exports = (env, argv) => {
   if (argv.mode !== 'development') {
+    // plugins.push(new CleanWebpackPlugin())
     plugins.push(new UglifyJsPlugin({
       cache: true,
       parallel: true,
@@ -22,7 +23,6 @@ module.exports = (env, argv) => {
       minimize: true
     }))
   } else {
-    plugins.push(new CleanWebpackPlugin())
     plugins.push(new webpack.NamedModulesPlugin())
     plugins.push(new webpack.HotModuleReplacementPlugin())
   }
