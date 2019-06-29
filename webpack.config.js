@@ -1,8 +1,9 @@
 const webpack = require('webpack')
 const path = require('path')
 const UglifyJsPlugin = require('uglifyjs-webpack-plugin')
-// const CleanWebpackPlugin = require('clean-webpack-plugin')
+const CleanWebpackPlugin = require('clean-webpack-plugin')
 const { VueLoaderPlugin } = require('vue-loader')
+const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin
 
 const ROOT_PATH = path.resolve(__dirname)
 const APP_PATH = path.resolve(ROOT_PATH, 'src')
@@ -13,7 +14,7 @@ const plugins = [
 
 module.exports = (env, argv) => {
   if (argv.mode !== 'development') {
-    // plugins.push(new CleanWebpackPlugin())
+    plugins.push(new CleanWebpackPlugin())
     plugins.push(new UglifyJsPlugin({
       cache: true,
       parallel: true,
@@ -25,19 +26,30 @@ module.exports = (env, argv) => {
   } else {
     plugins.push(new webpack.NamedModulesPlugin())
     plugins.push(new webpack.HotModuleReplacementPlugin())
+    plugins.push(new BundleAnalyzerPlugin({
+      analyzerMode: 'server',
+      generateStatsFile: true,
+      statsOptions: { source: false }
+    }))
   }
 
   return {
     entry: './src/index.js',
     output: {
       path: BUILD_PATH,
-      filename: 'hitalk.min.js',
-      library: 'hitalk',
+      filename: 'Hitalk-vue.min.js',
+      library: 'Hitalk',
       libraryTarget: 'umd',
       umdNamedDefine: true
     },
     externals: {
       vue: 'Vue'
+    },
+    resolve: {
+      extensions: ['.js', '.json', '.vue', '.scss', '.css'],
+      alias: {
+        '@': path.resolve(__dirname, APP_PATH)
+      }
     },
     module: {
       rules: [{
@@ -68,7 +80,8 @@ module.exports = (env, argv) => {
           'css-loader',
           'postcss-loader'
         ]
-      }, {
+      },
+      {
         test: /\.(png|jpg|gif)$/,
         use: ['url-loader?limit=8192']
       }

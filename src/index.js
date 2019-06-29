@@ -1,7 +1,7 @@
 import Vue from 'vue'
 import './styles/Hitalk.scss'
 import hitalk from './hitalk'
-import App from './App.vue'
+import App from './App'
 
 class Hitalk {
   constructor(props) {

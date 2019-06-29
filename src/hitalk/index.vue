@@ -1,136 +1,205 @@
 <template>
   <div class="Hitalk">
     <div class="vwrap">
-      <div class="welcome dn">欢迎回来，{{ defaultComment.nick }}！<span class="info-edit">修改</span></div>
-      <div :class="`vheader item${defaultComment.meta.length}`">
-        <input v-for="item in defaultComment.meta" :key="item" :name="item" :placeholder="config.head[item]" :class="`v${item} vinput`" type="text">
+      <div
+        class="welcome"
+        :class="{ 'dn': !showWelcome }">欢迎回来，{{ defaultComment.nick }}！
+        <span
+          class="info-edit"
+          @click="showWelcome = !showWelcome">修改</span>
+      </div>
+      <div :class="[`vheader item${defaultComment.meta.length}`, { 'dn': showWelcome }]">
+        <input
+          v-for="item in defaultComment.meta"
+          :key="item"
+          v-model="defaultComment[item]"
+          :name="item"
+          :placeholder="config.head[item]"
+          :class="`v${item} vinput`"
+          type="text">
       </div>
       <div class="vedit">
-        <textarea class="veditor vinput" :placeholder="$Hitalk.placeholder" />
+        <textarea
+          ref="comment"
+          v-model="defaultComment.comment"
+          class="veditor vinput"
+          :placeholder="$Hitalk.placeholder" />
       </div>
       <div class="vcontrol">
-        <span class="col col-60 smilies">
-          <div class="col smilies-logo"><span>^_^</span></div>
-          <div class="col" title="Markdown is Support">MarkDown is Support</div>
-          <div class="smilies-body" />
-        </span>
+        <ht-Smilies
+          ref="smilies"
+          @add="addSmiliesContent" />
         <div class="col col-40 text-right">
-          <button type="button" class="vsubmit vbtn">回复</button>
+          <button
+            ref="submit"
+            type="button"
+            class="vsubmit vbtn"
+            @click="verify">{{ config.ctrl.reply }}</button>
         </div>
       </div>
-      <div class="vmark dn" />
+      <ht-Alert
+        :config="alert"
+        @submit="submit" />
     </div>
     <div class="info">
-      <div class="count col" />
-    </div>
-    <div class="vloading">
-      <div class="spinner">
-        <div class="r1" />
-        <div class="r2" />
-        <div class="r3" />
-        <div class="r4" />
-        <div class="r5" />
+      <div class="count col">
+        {{ config.tips.comments }}(<span class="num">{{ page.totalCount }}</span>)
       </div>
     </div>
-    <div class="vempty dn" />
+    <ht-Loading :loading="loading" />
+    <div
+      v-if="tips"
+      class="vempty"
+      v-html="tips" />
     <ul class="vlist">
-      <li id="5d12da1aeaa3750074479262" class="vcard">
-        <img class="vimg" src="https://gravatar.loli.net/avatar/700080c250e0638f22c2c69b20ccaa77?d=wavatar">
-        <section>
-          <div class="vhead">
-            <a rel="nofollow" href="https://blog.ihoey.com" target="_blank">IHoey</a>
-            <span class="vsys">Mac OS 10.14.5</span>
-            <span class="vsys">Chrome 75.0.3770.100</span>
-          </div>
-          <div class="vcontent">
-            <ul>
-              <li>哈哈</li>
-              <li>嘿嘿</li>
-            </ul>
-          </div>
-          <div class="vfooter">
-            <span class="vtime">1 天前</span>
-            <span rid="5d12da1aeaa3750074479262" at="@IHoey" mail="mail@ihoey.com" class="vat">回复</span>
-            <!-- <div>1</div> -->
-          </div>
-        </section>
-      </li>
+      <template v-for="item in dataList">
+        <htCard
+          :key="item.id"
+          :data="item"
+          :text="config.ctrl.reply"
+          @reply="reply" />
+      </template>
     </ul>
-    <div class="vpage txt-right" />
+    <div class="vpage txt-right">
+      <span
+        class="prev page-numbers"
+        :class="{ dn: totalPage > 1 }"
+        @click="changePage(page.currentPage - 1)">&lt;</span>
+      <span
+        v-for="i in totalPage"
+        :key="i"
+        class="numbers page-numbers"
+        :class="{ current: page.currentPage === i }"
+        @click="changePage(i)">{{ i }}</span>
+      <span
+        class="next page-numbers"
+        :class="{ dn: totalPage === page.currentPage }"
+        @click="changePage(page.currentPage + 1)">&gt;</span>
+    </div>
   </div>
 </template>
 
 <script>
-// import md5 from 'blueimp-md5'
-// import marked from 'marked'
-import { config } from './constant'
+import md5 from 'blueimp-md5'
+import marked from 'marked'
+import { config } from '@/hitalk/constant'
+import * as utils from '@/utils'
+import htSmilies from './components/smilies'
+import htAlert from './components/alert'
+import htLoading from './components/loading'
+import htCard from './components/card'
 
 export default {
   name: 'Hitalk',
+  components: {
+    htSmilies,
+    htAlert,
+    htLoading,
+    htCard
+  },
   data() {
     return {
+      md5,
+      utils,
+      loading: false,
       config,
       av: {},
       defaultComment: {
         comment: '',
-        nick: 'Anonymous',
+        nick: '',
         mail: '',
         link: '',
         ua: navigator.userAgent,
         url: '',
-        meta: ['nick', 'mail', 'link'],
-        page: 0
+        meta: ['nick', 'mail', 'link']
       },
-      smiliesData: {
-        泡泡: `呵呵|哈哈|吐舌|太开心|笑眼|花心|小乖|乖|捂嘴笑|滑稽|你懂的|不高兴|怒|汗|黑线|泪|真棒|喷|惊哭|阴险|鄙视|酷|啊|狂汗|what|疑问|酸爽|呀咩爹|委屈|惊讶|睡觉|笑尿|挖鼻|吐|犀利|小红脸|懒得理|勉强|爱心|心碎|玫瑰|礼物|彩虹|太阳|星星月亮|钱币|茶杯|蛋糕|大拇指|胜利|haha|OK|沙发|手纸|香蕉|便便|药丸|红领巾|蜡烛|音乐|灯泡|开心|钱|咦|呼|冷|生气|弱`,
-        阿鲁: `高兴|小怒|脸红|内伤|装大款|赞一个|害羞|汗|吐血倒地|深思|不高兴|无语|亲亲|口水|尴尬|中指|想一想|哭泣|便便|献花|皱眉|傻笑|狂汗|吐|喷水|看不见|鼓掌|阴暗|长草|献黄瓜|邪恶|期待|得意|吐舌|喷血|无所谓|观察|暗地观察|肿包|中枪|大囧|呲牙|抠鼻|不说话|咽气|欢呼|锁眉|蜡烛|坐等|击掌|惊喜|喜极而泣|抽烟|不出所料|愤怒|无奈|黑线|投降|看热闹|扇耳光|小眼睛|中刀`
-      }
+      page: {
+        currentPage: 1,
+        totalCount: 0
+      },
+      showWelcome: null,
+      markedConfig: {
+        sanitize: !0,
+        breaks: !0
+      },
+      alert: {},
+      dataList: {},
+      tips: '',
+      atData: {}
     }
   },
   computed: {
-    subfix() {
-      return window.devicePixelRatio !== undefined && window.devicePixelRatio >= 1.49 ? '@2x' : ''
+    smilies() {
+      return this.$refs.smilies
+    },
+    totalPage() {
+      return (this.page.totalCount / this.page.pageSize) | 1
     }
   },
-  async created() {
-    this.config = {
-      ...this.config,
-      gravatar: {
-        cdn: 'https://gravatar.loli.net/avatar/',
-        ds: ['mm', 'identicon', 'monsterid', 'wavatar', 'retro', ''],
-        params: '?s=40',
-        hide: !1
-      },
-      pReg: new RegExp('\\@\\(\\s*(' + this.smiliesData.泡泡 + ')\\s*\\)'),
-      aReg: new RegExp('\\#\\(\\s*(' + this.smiliesData.阿鲁 + ')\\s*\\)')
-    }
-
-    const HitalkCache = await localStorage.getItem('HitalkCache')
-    this.defaultComment = {
-      ...this.defaultComment,
-      ...HitalkCache,
-      pageSize: this.$Hitalk.pageSize || 10,
-      url: (this.$Hitalk.path || location.pathname).replace(/index\.(html|htm)/, '')
-    }
-
-    this.av = this.$Hitalk.av || window.AV
-    const appId = this.$Hitalk.app_id || this.$Hitalk.appId
-    const appKey = this.$Hitalk.app_key || this.$Hitalk.appKey
-    const serverURLs = this.$Hitalk.serverURLs || 'https://avoscloud.com'
-
-    if (!appId || !appKey) {
-      this.throw(this.config.error[100])
-    }
-
-    this.av.init({ appId, appKey, serverURLs })
-
-    console.log(this.$Hitalk)
+  created() {
+    this.initAv()
   },
   methods: {
-    throw(msg) {
-      throw new Error(`Hitalk: ${msg}`)
+    initAv() {
+      this.av = this.$Hitalk.av || window.AV
+      const appId = this.$Hitalk.app_id || this.$Hitalk.appId
+      const appKey = this.$Hitalk.app_key || this.$Hitalk.appKey
+      const serverURLs = this.$Hitalk.serverURLs || 'https://avoscloud.com'
+
+      if (!appId || !appKey) {
+        this.htThrow(this.config.error[100])
+      }
+
+      this.av.init({ appId, appKey, serverURLs })
+      this.initConfig()
     },
-    initCount() {
+    async initConfig() {
+      this.config = {
+        ...this.config
+      }
+
+      const HitalkCache = await localStorage.getItem('HitalkCache')
+      this.showWelcome = !!HitalkCache
+      this.defaultComment = {
+        ...this.defaultComment,
+        ...JSON.parse(HitalkCache),
+        url: (this.$Hitalk.path || location.pathname).replace(/index\.(html|htm)/, '')
+      }
+      this.page.pageSize = this.$Hitalk.pageSize || 10
+
+      this.queryData()
+      this.queryTotalCount()
+      this.initPageCount()
+    },
+    commonQuery(url) {
+      const query = new this.av.Query('Comment')
+      query.equalTo('url', url || this.defaultComment['url']).descending('createdAt')
+      return query
+    },
+    queryData() {
+      console.log(this.page.currentPage)
+      this.loading = true
+      const cq = this.commonQuery()
+      cq.limit(this.page.pageSize)
+        .skip((this.page.currentPage - 1) * this.page.pageSize)
+        .find()
+        .then(res => {
+          this.dataList = res
+          this.loading = false
+        })
+    },
+    queryTotalCount() {
+      const cq = this.commonQuery()
+      cq.count().then(len => {
+        this.tips = !len ? '还没有评论哦，快来抢沙发吧!' : ''
+        this.page.totalCount = len
+      })
+    },
+    changePage(page) {
+      this.page.currentPage = page
+      this.queryData()
+    },
+    initPageCount() {
       const pCount = document.querySelectorAll('.hitalk-comment-count')
       if (!pCount.length) return false
 
@@ -146,7 +215,7 @@ export default {
       }
 
       // eslint-disable-next-line new-cap
-      const cq = new this.v.Query.or(...vArr)
+      const cq = new this.av.Query.or(...vArr)
       cq.select('url')
         .limit(1000)
         .find()
@@ -154,8 +223,165 @@ export default {
           urlArr.map((e, i) => (pCount[i].innerText = res.filter(x => e === x.get('url')).length))
         })
         .catch(ex => {
-          this.throw(ex)
+          this.htThrow(ex)
         })
+    },
+    addSmiliesContent(key, e) {
+      const val = key === this.smilies.newpaopao ? `@${e}` : `#${e}`
+      this.defaultComment.comment += ` ${val} `
+      this.smilies.showSmilies = false
+    },
+    alertHandle({ show = true, title, confirm, cancel = config.ctrl.cancel } = {}) {
+      this.alert = {
+        show,
+        title,
+        confirm,
+        cancel
+      }
+    },
+    verify() {
+      if (this.$refs.submit.disabled) {
+        this.alertHandle({ title: this.config.tips.busy })
+        return false
+      }
+      const data = this.defaultComment
+      if (!data.comment) {
+        this.alertHandle({ show: true, title: config.tips.empty, cancel: config.ctrl.ok })
+        return false
+      }
+      if (!data.nick) data.nick = this.config.head.defaultNick
+
+      const mailRet = utils.check.mail(data.mail)
+      const linkRet = utils.check.link(data.link)
+      this.defaultComment['mail'] = mailRet.k ? mailRet.v : ''
+      this.defaultComment['link'] = linkRet.k ? linkRet.v : ''
+      if (!mailRet.k && !linkRet.k && data.meta.includes('mail') && data.meta.includes('link')) {
+        this.alertHandle({ title: this.config.tips.mAndLErr })
+      } else if (!mailRet.k && data.meta.includes('mail')) {
+        this.alertHandle({ title: this.config.tips.mErr })
+      } else if (!linkRet.k && data.meta.includes('link')) {
+        this.alertHandle({ title: this.config.tips.lErr })
+      } else {
+        this.submit()
+      }
+    },
+    getAcl() {
+      const acl = new this.av.ACL()
+      acl.setPublicReadAccess(!0)
+      acl.setPublicWriteAccess(!1)
+      return acl
+    },
+    parseComment() {
+      const atData = this.atData
+      const defaultComment = this.defaultComment
+      const idx = this.defaultComment.comment.indexOf(atData.at)
+
+      const pReg = new RegExp('\\@(' + this.smilies.smiliesData.泡泡 + ')')
+      const aReg = new RegExp('\\#(' + this.smilies.smiliesData.阿鲁 + ')')
+      let comment = defaultComment.comment
+
+      if (idx > -1 && atData.at !== '') {
+        const at = `<a class="at" href='#${defaultComment.rid}'>${atData.at}</a>`
+        comment = defaultComment.comment.replace(atData.at, at)
+      }
+      // 表情
+      var matched
+      while ((matched = comment.match(pReg))) {
+        comment = comment.replace(
+          matched[0],
+          `<img src="https://cdn.dode.top/newpaopao/${matched[1] +
+            this.smilies.subfix}.png" class="biaoqing newpaopao" height=30 width=30 no-zoom />`
+        )
+      }
+      while ((matched = comment.match(aReg))) {
+        comment = comment.replace(
+          matched[0],
+          `<img src="https://cdn.dode.top/alu/${matched[1] +
+            this.smilies.subfix}.png" class="biaoqing alu" height=33 width=33 no-zoom />`
+        )
+      }
+      return comment
+    },
+    reply(data) {
+      const { id, mail, nick } = data
+      this.atData['at'] = `@${nick}`
+      this.atData['rmail'] = mail
+      this.defaultComment['rid'] = id
+      this.defaultComment['comment'] = `@${nick} `
+      this.$refs['comment'].focus()
+    },
+    submit() {
+      this.$refs.submit.disabled = true
+      this.loading = true
+      const arr = [...this.defaultComment.meta, 'comment']
+      arr.forEach(e => {
+        this.defaultComment[e] =
+          e === 'comment'
+            ? marked(this.defaultComment.comment, this.markedConfig)
+            : utils.HtmlUtil.encode(this.defaultComment[e])
+      })
+      const content = this.parseComment()
+      const data = { ...this.defaultComment }
+
+      data.comment = content
+      delete data.meta
+      this.savaData(data)
+    },
+    savaData(data) {
+      // 声明类型
+      const Ct = this.av.Object.extend('Comment')
+      // 新建对象
+      const comment = new Ct()
+      for (const i in data) {
+        if (data.hasOwnProperty(i)) {
+          const _v = data[i]
+          comment.set(i, _v)
+        }
+      }
+      comment.setACL(this.getAcl())
+      comment.save().then(ret => {
+        this.loading = false
+        this.saveCache(data)
+        this.page.totalCount += 1
+        this.queryData()
+
+        data['mail'] &&
+          this.signUp({
+            username: data['nick'],
+            mail: data['mail']
+          })
+
+        this.$refs.submit.disabled = false
+        this.loading.hide()
+        this.reset()
+      })
+    },
+    saveCache(data) {
+      data['nick'] !== config.head.defaultNick &&
+        localStorage &&
+        localStorage.setItem(
+          'HitalkCache',
+          JSON.stringify({
+            nick: data['nick'],
+            link: data['link'],
+            mail: data['mail']
+          })
+        )
+    },
+    signUp(o) {
+      const u = new this.av.User()
+      u.setUsername(o.username)
+      u.setPassword(o.mail)
+      u.setEmail(o.mail)
+      u.setACL(this.getAcl())
+      return u.signUp()
+    },
+    reset() {
+      const arr = [...this.defaultComment.meta, 'rid']
+      arr.forEach(e => {
+        this.defaultComment[e] = ''
+      })
+      this.atData = {}
     }
   }
 }

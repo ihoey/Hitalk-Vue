@@ -248,4 +248,4 @@ function Detect(userAgent) {
 function detectFactory(u) {
   return new Detect(u)
 }
-module.exports = detectFactory
+export default detectFactory
