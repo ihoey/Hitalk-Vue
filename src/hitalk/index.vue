@@ -3,10 +3,10 @@
     <div class="vwrap">
       <div
         class="welcome"
-        :class="{ 'dn': !showWelcome }">欢迎回来，{{ defaultComment.nick }}！
+        :class="{ 'dn': !showWelcome }">{{ config.ctrl['welcome'] }}，{{ defaultComment.nick }}！
         <span
           class="info-edit"
-          @click="showWelcome = !showWelcome">修改</span>
+          @click="showWelcome = !showWelcome">{{ config.ctrl.modify }}</span>
       </div>
       <div :class="[`vheader item${defaultComment.meta.length}`, { 'dn': showWelcome }]">
         <input
@@ -28,6 +28,7 @@
       <div class="vcontrol">
         <ht-Smilies
           ref="smilies"
+          :url="defaultComment.cdn"
           @add="addSmiliesContent" />
         <div class="col col-40 text-right">
           <button
@@ -43,7 +44,7 @@
     </div>
     <div class="info">
       <div class="count col">
-        {{ config.tips.comments }}(<span class="num">{{ page.totalCount }}</span>)
+        {{ config.tips.comments }}(<span class="num">{{ totalCount }}</span>)
       </div>
     </div>
     <ht-Loading :loading="loading" />
@@ -60,80 +61,66 @@
           @reply="reply" />
       </template>
     </ul>
-    <div class="vpage txt-right">
-      <span
-        class="prev page-numbers"
-        :class="{ dn: totalPage > 1 }"
-        @click="changePage(page.currentPage - 1)">&lt;</span>
-      <span
-        v-for="i in totalPage"
-        :key="i"
-        class="numbers page-numbers"
-        :class="{ current: page.currentPage === i }"
-        @click="changePage(i)">{{ i }}</span>
-      <span
-        class="next page-numbers"
-        :class="{ dn: totalPage === page.currentPage }"
-        @click="changePage(page.currentPage + 1)">&gt;</span>
-    </div>
+    <htPage
+      ref="page"
+      :total="totalCount"
+      @change="queryData" />
   </div>
 </template>
 
 <script>
+import config from '@/hitalk/constant'
+import * as utils from '@/utils'
 import md5 from 'blueimp-md5'
 import marked from 'marked'
-import { config } from '@/hitalk/constant'
-import * as utils from '@/utils'
+
 import htSmilies from './components/smilies'
-import htAlert from './components/alert'
 import htLoading from './components/loading'
+import htAlert from './components/alert'
 import htCard from './components/card'
+import htPage from './components/page'
 
 export default {
   name: 'Hitalk',
   components: {
     htSmilies,
-    htAlert,
     htLoading,
-    htCard
+    htAlert,
+    htCard,
+    htPage
   },
   data() {
     return {
       md5,
       utils,
-      loading: false,
       config,
-      av: {},
+      av: void 0,
+      loading: false,
       defaultComment: {
-        comment: '',
         nick: '',
         mail: '',
         link: '',
+        comment: '',
         ua: navigator.userAgent,
-        url: '',
-        meta: ['nick', 'mail', 'link']
+        meta: ['nick', 'mail', 'link'],
+        cdn: 'https://cdn.dode.top'
       },
-      page: {
-        currentPage: 1,
-        totalCount: 0
-      },
+      totalCount: 0,
       showWelcome: null,
       markedConfig: {
         sanitize: !0,
         breaks: !0
       },
+      page: { currentPage: 1 },
       alert: {},
+      atData: {},
       dataList: {},
-      tips: '',
-      atData: {}
+      tips: ''
     }
   },
   computed: {
     smilies() {
       return this.$refs.smilies
-    },
-    totalPage() {
-      return (this.page.totalCount / this.page.pageSize) | 1
     }
   },
   created() {
@@ -145,7 +132,6 @@ export default {
       const appId = this.$Hitalk.app_id || this.$Hitalk.appId
       const appKey = this.$Hitalk.app_key || this.$Hitalk.appKey
       const serverURLs = this.$Hitalk.serverURLs || 'https://avoscloud.com'
-
       if (!appId || !appKey) {
         this.htThrow(this.config.error[100])
       }
@@ -160,12 +146,13 @@ export default {
 
       const HitalkCache = await localStorage.getItem('HitalkCache')
       this.showWelcome = !!HitalkCache
+      this.page.pageSize = this.$Hitalk.pageSize || 10
+
       this.defaultComment = {
         ...this.defaultComment,
         ...JSON.parse(HitalkCache),
         url: (this.$Hitalk.path || location.pathname).replace(/index\.(html|htm)/, '')
       }
-      this.page.pageSize = this.$Hitalk.pageSize || 10
 
       this.queryData()
       this.queryTotalCount()
@@ -177,7 +164,6 @@ export default {
       return query
     },
     queryData() {
-      console.log(this.page.currentPage)
       this.loading = true
       const cq = this.commonQuery()
       cq.limit(this.page.pageSize)
@@ -191,13 +177,9 @@ export default {
     queryTotalCount() {
       const cq = this.commonQuery()
       cq.count().then(len => {
-        this.tips = !len ? '还没有评论哦，快来抢沙发吧!' : ''
-        this.page.totalCount = len
+        this.tips = !len ? this.config.tips.sofa : ''
+        this.totalCount = len
       })
-    },
-    changePage(page) {
-      this.page.currentPage = page
-      this.queryData()
     },
     initPageCount() {
       const pCount = document.querySelectorAll('.hitalk-comment-count')
@@ -285,19 +267,17 @@ export default {
         comment = defaultComment.comment.replace(atData.at, at)
       }
       // 表情
-      var matched
-      while ((matched = comment.match(pReg))) {
+      comment = this.matcheSmilies(pReg, 'newpaopao', comment)
+      comment = this.matcheSmilies(aReg, 'alu', comment)
+      return comment
+    },
+    matcheSmilies(reg, type, comment) {
+      let matched
+      while ((matched = comment.match(reg))) {
         comment = comment.replace(
           matched[0],
-          `<img src="https://cdn.dode.top/newpaopao/${matched[1] +
-            this.smilies.subfix}.png" class="biaoqing newpaopao" height=30 width=30 no-zoom />`
-        )
-      }
-      while ((matched = comment.match(aReg))) {
-        comment = comment.replace(
-          matched[0],
-          `<img src="https://cdn.dode.top/alu/${matched[1] +
-            this.smilies.subfix}.png" class="biaoqing alu" height=33 width=33 no-zoom />`
+          `<img src="${this.defaultComment.cdn}/${type}/${matched[1] +
+            this.smilies.subfix}.png" class="biaoqing ${type}" height=33 width=33 no-zoom />`
         )
       }
       return comment
@@ -342,7 +322,7 @@ export default {
       comment.save().then(ret => {
         this.loading = false
         this.saveCache(data)
-        this.page.totalCount += 1
+        this.totalCount += 1
         this.queryData()
 
         data['mail'] &&

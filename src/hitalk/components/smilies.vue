@@ -16,7 +16,7 @@
           @click="$emit('add', key, e)">
           <img
             class="biaoqing newpaopao"
-            :src="`https://cdn.dode.top/${key === newpaopao ? 'newpaopao' : 'alu'}/${e}${subfix}.png`">
+            :src="`${url}/${key === newpaopao ? 'newpaopao' : 'alu'}/${e}${subfix}.png`">
         </li>
       </ul>
       <div class="smilies-bar">
@@ -37,6 +37,12 @@
 <script>
 export default {
   name: 'Smilies',
+  props: {
+    url: {
+      type: String,
+      default: ''
+    }
+  },
   data() {
     return {
       showSmilies: false,
@@ -50,7 +56,7 @@ export default {
   },
   computed: {
     subfix() {
-      return window.devicePixelRatio !== undefined && window.devicePixelRatio >= 1.49 ? '@2x' : ''
+      return window.devicePixelRatio !== void 0 && window.devicePixelRatio >= 1.49 ? '@2x' : ''
     }
   },
   mounted() {

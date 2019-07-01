@@ -1,7 +1,6 @@
 import Vue from 'vue'
 import './styles/Hitalk.scss'
 import hitalk from './hitalk'
-import App from './App'
 
 class Hitalk {
   constructor(props) {
@@ -10,7 +9,7 @@ class Hitalk {
     Vue.use(hitalk)
     new Vue({
       el: props.el || '#comment',
-      render: h => h(App)
+      render: h => h('hitalk')
     })
   }
 }
