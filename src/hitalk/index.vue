@@ -226,7 +226,7 @@ export default {
         this.alertHandle({ title: this.config.tips.busy })
         return false
       }
-      const data = this.defaultComment
+      const data = { ...this.defaultComment }
       if (!data.comment) {
         this.alertHandle({ show: true, title: config.tips.empty, cancel: config.ctrl.ok })
         return false
@@ -238,11 +238,11 @@ export default {
       this.defaultComment['mail'] = mailRet.k ? mailRet.v : ''
       this.defaultComment['link'] = linkRet.k ? linkRet.v : ''
       if (!mailRet.k && !linkRet.k && data.meta.includes('mail') && data.meta.includes('link')) {
-        this.alertHandle({ title: this.config.tips.mAndLErr })
+        this.alertHandle({ title: this.config.tips.mAndLErr, confirm: config.ctrl.sure })
       } else if (!mailRet.k && data.meta.includes('mail')) {
-        this.alertHandle({ title: this.config.tips.mErr })
+        this.alertHandle({ title: this.config.tips.mErr, confirm: config.ctrl.sure })
       } else if (!linkRet.k && data.meta.includes('link')) {
-        this.alertHandle({ title: this.config.tips.lErr })
+        this.alertHandle({ title: this.config.tips.lErr, confirm: config.ctrl.sure })
       } else {
         this.submit()
       }
