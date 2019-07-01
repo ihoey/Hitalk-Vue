@@ -231,7 +231,6 @@ export default {
         this.alertHandle({ show: true, title: config.tips.empty, cancel: config.ctrl.ok })
         return false
       }
-      if (!data.nick) data.nick = this.config.head.defaultNick
 
       const mailRet = utils.check.mail(data.mail)
       const linkRet = utils.check.link(data.link)
@@ -291,6 +290,7 @@ export default {
       this.$refs['comment'].focus()
     },
     submit() {
+      this.alertHandle({ show: false })
       this.$refs.submit.disabled = true
       this.loading = true
       const arr = [...this.defaultComment.meta, 'comment']
@@ -302,6 +302,7 @@ export default {
       })
       const content = this.parseComment()
       const data = { ...this.defaultComment }
+      if (!data.nick) data.nick = this.config.head.defaultNick
 
       data.comment = content
       delete data.meta
@@ -321,23 +322,24 @@ export default {
       comment.setACL(this.getAcl())
       comment.save().then(ret => {
         this.loading = false
-        this.saveCache(data)
+        this.$refs.submit.disabled = false
+
         this.totalCount += 1
         this.queryData()
 
-        data['mail'] &&
+        if (data['mail'] && this.defaultComment['nick']) {
+          this.saveCache(data)
           this.signUp({
             username: data['nick'],
             mail: data['mail']
           })
+        }
 
-        this.$refs.submit.disabled = false
-        this.loading.hide()
         this.reset()
       })
     },
     saveCache(data) {
-      data['nick'] !== config.head.defaultNick &&
+      this.defaultComment.nick !== this.config.head.defaultNick &&
         localStorage &&
         localStorage.setItem(
           'HitalkCache',
@@ -357,7 +359,7 @@ export default {
       return u.signUp()
     },
     reset() {
-      const arr = [...this.defaultComment.meta, 'rid']
+      const arr = [...this.defaultComment.meta, 'rid', 'comment']
       arr.forEach(e => {
         this.defaultComment[e] = ''
       })

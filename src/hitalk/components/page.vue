@@ -2,7 +2,7 @@
   <div class="vpage txt-right">
     <span
       class="prev page-numbers"
-      :class="{ dn: totalPage === 1 }"
+      :class="{ dn: page.currentPage === 1 }"
       @click="changePage(page.currentPage - 1)">&lt;</span>
     <span
       v-for="i in totalPage"
