@@ -62,8 +62,8 @@
       </template>
     </ul>
     <htPage
-      ref="page"
       :total="totalCount"
+      :page="page"
       @change="queryData" />
   </div>
 </template>
