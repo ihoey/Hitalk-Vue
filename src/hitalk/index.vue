@@ -131,7 +131,7 @@ export default {
       this.av = this.$Hitalk.av || window.AV
       const appId = this.$Hitalk.app_id || this.$Hitalk.appId
       const appKey = this.$Hitalk.app_key || this.$Hitalk.appKey
-      const serverURLs = this.$Hitalk.serverURLs || 'https://avoscloud.com'
+      const serverURLs = this.$Hitalk.serverURLs || 'https://hitalk.dode.top'
       if (!appId || !appKey) {
         this.htThrow(this.config.error[100])
       }

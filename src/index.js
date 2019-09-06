@@ -4,9 +4,7 @@ import hitalk from './hitalk'
 
 class Hitalk {
   constructor(props) {
-    Vue.prototype.$Hitalk = props
-
-    Vue.use(hitalk)
+    Vue.use(hitalk, props)
     new Vue({
       el: props.el || '#comment',
       render: h => h('hitalk')
