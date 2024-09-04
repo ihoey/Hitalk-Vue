@@ -78,7 +78,7 @@
   },
   "dependencies": {
     "blueimp-md5": "^2.10.0",
-    "marked": "^12.0.1",
+    "marked": "^14.1.1",
     "vue": "^2.6.10"
   }
 }
