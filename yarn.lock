@@ -4640,10 +4640,10 @@ map-visit@^1.0.0:
   dependencies:
     object-visit "^1.0.0"
 
-marked@^14.1.1:
-  version "14.1.1"
-  resolved "https://registry.yarnpkg.com/marked/-/marked-14.1.1.tgz#83a8da67de6b236420e9cfb30e6f774cfb40255f"
-  integrity sha512-eS59oxof5eBVDCKTs+mJbvB/6Vq137GbimF9wkTIlto2/B2ppY5nigUUQgKVmA3bI2mPTIshUyDj5j612ZxlQQ==
+marked@^15.0.0:
+  version "15.0.0"
+  resolved "https://registry.yarnpkg.com/marked/-/marked-15.0.0.tgz#59fb02c19c98340c8668d911dc4b3a84b062a4a9"
+  integrity sha512-0mouKmBROJv/WSHJBPZZyYofUgawMChnD5je/g+aOBXsHDjb/IsnTQj7mnhQZu+qPJmRQ0ecX3mLGEUm3BgwYA==
 
 matcher@^1.0.0:
   version "1.1.1"
